@@ -7,6 +7,7 @@ import RevenueSegmentTab from './RevenueSegmentTab'
 import ConsolidatedBSTab from './ConsolidatedBSTab'
 import StandaloneTab from './StandaloneTab'
 import { consolidatedIS, consolidatedBS, standaloneIS, standaloneBS } from '@/lib/financial-data'
+import InsightsModal from './InsightsModal'
 
 const TABS = [
   { id: 'overview', label: '핵심 지표', icon: '📊' },
@@ -18,6 +19,7 @@ const TABS = [
 export default function DashboardClient() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('overview')
+  const [showInsights, setShowInsights] = useState(false)
 
   async function handleLogout() {
     await fetch('/api/auth', { method: 'DELETE' })
@@ -73,6 +75,29 @@ export default function DashboardClient() {
           <span className="text-xs" style={{ color: '#475569' }}>
             단위: 십억원 (연결 기준)
           </span>
+          {/* AI 인사이트 버튼 */}
+          <button
+            onClick={() => setShowInsights(true)}
+            className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-medium transition-all"
+            style={{
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(59,130,246,0.2))',
+              border: '1px solid rgba(99,102,241,0.4)',
+              color: '#a5b4fc',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, rgba(99,102,241,0.35), rgba(59,130,246,0.35))'
+              ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(99,102,241,0.7)'
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(59,130,246,0.2))'
+              ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(99,102,241,0.4)'
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            AI 인사이트
+          </button>
           <button
             onClick={handleLogout}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors"
@@ -136,6 +161,9 @@ export default function DashboardClient() {
           )}
         </div>
       </main>
+
+      {/* AI 인사이트 모달 */}
+      {showInsights && <InsightsModal onClose={() => setShowInsights(false)} />}
 
       {/* 푸터 */}
       <footer className="px-6 py-4 text-center border-t" style={{ borderColor: 'rgba(59,130,246,0.08)' }}>
