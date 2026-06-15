@@ -68,32 +68,37 @@ export async function POST(request: NextRequest) {
 
 전문적이고 간결하게, 한국어로 작성해주세요.`
 
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
-        }),
+  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+  })
+
+  for (const model of models) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }
+      )
+
+      if (!res.ok) {
+        const err = await res.json()
+        const msg: string = err.error?.message || ''
+        if (res.status === 503 || msg.toLowerCase().includes('high demand') || msg.toLowerCase().includes('overloaded')) {
+          continue
+        }
+        return NextResponse.json({ error: msg || 'Gemini API error' }, { status: res.status })
       }
-    )
 
-    if (!res.ok) {
-      const err = await res.json()
-      return NextResponse.json({ error: err.error?.message || 'Gemini API error' }, { status: res.status })
+      const data = await res.json()
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+      if (!text) continue
+
+      return NextResponse.json({ insights: text, model })
+    } catch {
+      continue
     }
-
-    const data = await res.json()
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-    if (!text) {
-      return NextResponse.json({ error: 'No response from Gemini' }, { status: 500 })
-    }
-
-    return NextResponse.json({ insights: text })
-  } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
   }
+
+  return NextResponse.json({ error: 'Gemini 서버가 일시적으로 혼잡합니다. 잠시 후 다시 시도해 주세요.' }, { status: 503 })
 }
